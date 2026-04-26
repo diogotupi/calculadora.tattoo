@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Calculadora Tattoo</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+
+<style>
+body {
+  font-family: 'Inter', sans-serif;
+  background: #0f0f0f;
+  color: #fff;
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+}
+
+.container {
+  width: 100%;
+  max-width: 500px;
+}
+
+.card {
+  background: #1a1a1a;
+  padding: 18px;
+  overflow: hidden
+  border-radius: 16px;
+  margin-bottom: 15px;
+}
+
+input, select, button {
+  width: 100%;
+  display: block;
+  padding: 14px 16px;
+  margin-top: 8px;
+
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+
+  background: rgba(255,255,255,0.03);
+  color: #fff;
+  font-size: 16px;
+
+  outline: none;
+  transition: all 0.2s ease;
+
+  box-sizing: border-box; /* 🔥 ESSENCIAL */
+}
+
+button {
+  background: #00c896;
+  color: #000;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.big {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.sub {
+  opacity: 0.7;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>💉 Calculadora Tattoo</h2>
+
+<div class="card">
+  <label>Quanto você quer ganhar</label>
+  <input type="text" id="lucro" placeholder="Ex: 1000">
+
+  <label>Parcelamento</label>
+  <select id="parcelas">
+    <option value="1">1x</option>
+    <option value="2">2x</option>
+    <option value="3">3x</option>
+    <option value="4" selected>4x</option>
+    <option value="5">5x</option>
+    <option value="6">6x</option>
+    <option value="7">7x</option>
+    <option value="8">8x</option>
+    <option value="9">9x</option>
+    <option value="10">10x</option>
+    <option value="11">11x</option>
+    <option value="12">12x</option>
+  </select>
+
+  <button onclick="calcular()">Calcular</button>
+</div>
+
+<div id="resultado"></div>
+
+</div>
+
+<script>
+  const taxas = {
+    1: 0.042,
+    2: 0.0609,
+    3: 0.0701,
+    4: 0.0791,
+    5: 0.088,
+    6: 0.0967,
+    7: 0.1259,
+    8: 0.1342,
+    9: 0.1425,
+    10: 0.1506,
+    11: 0.1587,
+    12: 0.1666
+  };
+  
+  function formatar(v) {
+    return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  }
+  
+  function calcular() {
+    let L = parseFloat(document.getElementById("lucro").value.replace(",", "."));
+    let parcelas = parseInt(document.getElementById("parcelas").value);
+  
+    if (!L) return;
+  
+    let taxaEstudio = 0.35;
+    let taxaMaquina = taxas[parcelas];
+  
+    // 🔥 VALOR BASE (PIX)
+    let base = L / (1 - taxaEstudio);
+  
+    // 💳 VALOR PARCELADO (apenas adiciona taxa da máquina)
+    let parcelado = base / (1 - taxaMaquina);
+  
+    let valorParcela = parcelado / parcelas;
+  
+    // 🏢 Estúdio (sempre sobre o base)
+    let valorEstudio = base * taxaEstudio;
+  
+    // 🏦 Taxa máquina (diferença real)
+    let valorTaxa = parcelado - base;
+  
+    document.getElementById("resultado").innerHTML = `
+      
+      <div class="card">
+        <div class="big">💸 PIX / Dinheiro</div>
+        <div>${formatar(base)}</div>
+        <div class="sub">(valor base sem taxa de máquina)</div>
+      </div>
+  
+      <div class="card">
+        <div class="big">💳 ${parcelas}x "sem juros"</div>
+        <div>${formatar(parcelado)}</div>
+        <div class="sub">${parcelas}x de ${formatar(valorParcela)}</div>
+      </div>
+  
+      <div class="card">
+        <div class="big">🏦 Quanto estou pagando de taxa</div>
+        <div>${formatar(valorTaxa)}</div>
+      </div>
+  
+      <div class="card">
+        <div class="big">🏢 Quanto estou pagando pro estúdio</div>
+        <div>${formatar(valorEstudio)}</div>
+      </div>
+  
+    `;
+  }
+  </script>
+
+</body>
+</html>
