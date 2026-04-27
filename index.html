@@ -135,6 +135,91 @@ select {
 
   padding-right: 40px; /* espaço pra setinha */
 }
+
+.modo-switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.modo-opcao {
+  font-size: 13px;
+  font-weight: 500;
+  opacity: 0.45;
+  flex: 1;
+  line-height: 1.2;
+  transition: opacity 0.2s ease;
+}
+
+.modo-opcao.is-active {
+  opacity: 1;
+}
+
+.modo-opcao:first-child {
+  text-align: left;
+}
+
+.modo-opcao:last-child {
+  text-align: right;
+}
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 52px;
+  height: 30px;
+  flex-shrink: 0;
+}
+
+.modo-switch .switch input {
+  width: 0;
+  height: 0;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+}
+
+.switch-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  transition: background 0.2s ease;
+}
+
+.switch-slider::before {
+  position: absolute;
+  content: "";
+  height: 24px;
+  width: 24px;
+  left: 3px;
+  bottom: 3px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+.modo-switch .switch input:checked + .switch-slider {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.modo-switch .switch input:checked + .switch-slider::before {
+  transform: translateX(22px);
+}
+
+.modo-switch .switch input:focus-visible + .switch-slider {
+  outline: 2px solid rgba(255, 255, 255, 0.35);
+  outline-offset: 2px;
+}
 </style>
 </head>
 
@@ -148,7 +233,21 @@ select {
 <div class="container">
 
 <div class="card">
-  <label>Quanto você quer ganhar</label>
+  <div class="modo-switch" role="group" aria-label="Modo da calculadora">
+    <span class="modo-opcao is-active" id="modoLabelCobrar">Quanto cobrar</span>
+    <label class="switch">
+      <input
+        type="checkbox"
+        id="modoGanho"
+        aria-label="Alternar para modo: quanto estou ganhando"
+        onchange="onModoChange()"
+      >
+      <span class="switch-slider"></span>
+    </label>
+    <span class="modo-opcao" id="modoLabelGanho">Quanto estou ganhando</span>
+  </div>
+
+  <label id="valorFieldLabel" for="lucro">Quanto você quer ganhar</label>
   <input
     type="text"
     id="lucro"
@@ -160,6 +259,7 @@ select {
 
   <label>Parcelamento</label>
   <select id="parcelas">
+    <option value="0" id="opcaoVista" hidden>Dinheiro ou pix</option>
     <option value="1">1x</option>
     <option value="2">2x</option>
     <option value="3">3x</option>
@@ -200,35 +300,50 @@ select {
   function formatar(v) {
     return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   }
+
+  function onModoChange() {
+    const ganho = document.getElementById("modoGanho").checked;
+    const parcelasSelect = document.getElementById("parcelas");
+    const opcaoVista = document.getElementById("opcaoVista");
+
+    document.getElementById("modoLabelCobrar").classList.toggle("is-active", !ganho);
+    document.getElementById("modoLabelGanho").classList.toggle("is-active", ganho);
+    document.getElementById("valorFieldLabel").textContent = ganho
+      ? "Valor cobrado"
+      : "Quanto você quer ganhar";
+    const inp = document.getElementById("lucro");
+    inp.placeholder = ganho ? "Ex: 2000" : "Ex: 1000";
+
+    opcaoVista.hidden = !ganho;
+    if (!ganho && parcelasSelect.value === "0") {
+      parcelasSelect.value = "4";
+    }
+
+    document.getElementById("resultado").innerHTML = "";
+  }
   
   function calcular() {
     const lucroInput = document.getElementById("lucro");
     const apenasNumeros = lucroInput.value.replace(/\D/g, "");
     lucroInput.value = apenasNumeros;
-    let L = Number(apenasNumeros);
-    let parcelas = parseInt(document.getElementById("parcelas").value);
-  
-    if (!L) return;
-  
-    let taxaEstudio = 0.35;
-    let taxaMaquina = taxas[parcelas];
-  
-    // 🔥 VALOR BASE (PIX)
-    let base = L / (1 - taxaEstudio);
-  
-    // 💳 VALOR PARCELADO (apenas adiciona taxa da máquina)
-    let parcelado = base / (1 - taxaMaquina);
-  
-    let valorParcela = parcelado / parcelas;
-  
-    // 🏢 Estúdio (sempre sobre o base)
-    let valorEstudio = base * taxaEstudio;
-  
-    // 🏦 Taxa máquina (diferença real)
-    let valorTaxa = parcelado - base;
-  
-    document.getElementById("resultado").innerHTML = `
-  
+    const valor = Number(apenasNumeros);
+    const parcelas = parseInt(document.getElementById("parcelas").value, 10);
+    const modoGanho = document.getElementById("modoGanho").checked;
+
+    if (!valor) return;
+
+    const taxaEstudio = 0.35;
+    const taxaMaquina = parcelas === 0 ? 0 : taxas[parcelas];
+
+    if (!modoGanho) {
+      const L = valor;
+      const base = L / (1 - taxaEstudio);
+      const parcelado = base / (1 - taxaMaquina);
+      const valorParcela = parcelado / parcelas;
+      const valorEstudio = base * taxaEstudio;
+      const valorTaxa = parcelado - base;
+
+      document.getElementById("resultado").innerHTML = `
   <div class="card">
     <div class="big">💳 Valor Total:</div>
     <div>${formatar(parcelado)}</div>
@@ -249,7 +364,56 @@ select {
     <div class="big">🏢 Comissão do estúdio:</div>
     <div>${formatar(valorEstudio)}</div>
   </div>
+`;
+      return;
+    }
 
+    const parcelado = valor;
+    const base = parcelado * (1 - taxaMaquina);
+    const liquido = base * (1 - taxaEstudio);
+    const valorParcela = parcelas > 0 ? parcelado / parcelas : parcelado;
+    const valorTaxa = parcelado - base;
+    const valorEstudio = base * taxaEstudio;
+    const detalheParcelamento = parcelas > 0
+      ? `${parcelas}x de ${formatar(valorParcela)}`
+      : "Dinheiro ou pix";
+
+    if (parcelas === 0) {
+      document.getElementById("resultado").innerHTML = `
+  <div class="card">
+    <div class="big">💰 Quanto estou ganhando (líquido):</div>
+    <div>${formatar(liquido)}</div>
+  </div>
+
+  <div class="card">
+    <div class="big">🏢 Comissão do estúdio:</div>
+    <div>${formatar(valorEstudio)}</div>
+  </div>
+`;
+      return;
+    }
+
+    document.getElementById("resultado").innerHTML = `
+  <div class="card">
+    <div class="big">💰 Você está ganhando (líquido):</div>
+    <div>${formatar(liquido)}</div>
+  </div>
+
+  <div class="card">
+    <div class="big">💳 Valor cobrado (parcelado):</div>
+    <div>${formatar(parcelado)}</div>
+    <div class="sub">${detalheParcelamento}</div>
+  </div>
+
+  <div class="card">
+    <div class="big">🏦 Taxa do link Infinite Pay:</div>
+    <div>${formatar(valorTaxa)}</div>
+  </div>
+
+  <div class="card">
+    <div class="big">🏢 Comissão do estúdio:</div>
+    <div>${formatar(valorEstudio)}</div>
+  </div>
 `;
   }
   </script>
