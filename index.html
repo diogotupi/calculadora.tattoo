@@ -149,7 +149,14 @@ select {
 
 <div class="card">
   <label>Quanto você quer ganhar</label>
-  <input type="text" id="lucro" placeholder="Ex: 1000">
+  <input
+    type="text"
+    id="lucro"
+    placeholder="Ex: 1000"
+    inputmode="numeric"
+    pattern="[0-9]*"
+    oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+  >
 
   <label>Parcelamento</label>
   <select id="parcelas">
@@ -195,7 +202,10 @@ select {
   }
   
   function calcular() {
-    let L = parseFloat(document.getElementById("lucro").value.replace(",", "."));
+    const lucroInput = document.getElementById("lucro");
+    const apenasNumeros = lucroInput.value.replace(/\D/g, "");
+    lucroInput.value = apenasNumeros;
+    let L = Number(apenasNumeros);
     let parcelas = parseInt(document.getElementById("parcelas").value);
   
     if (!L) return;
